@@ -1,0 +1,19 @@
+<?php
+$this->headScript()->appendFile($this->basePath() . '/js/3rdparty/moment.min.js');
+$this->headScript()->appendFile($this->basePath() . '/js/3rdparty/bootstrap-datetimepicker.min.js');
+
+$this->headScript()->appendFile($this->basePath() . '/js/3rdparty/bootstrap.min.js');
+$this->headLink()->appendStylesheet($this->basePath() . '/css/bootstrap-datetimepicker.min.css');
+
+$this->headScript()->appendFile($this->basePath() . '/js/reporting_scripts.js');
+?>
+
+
+
+<div class="btn-group report_menu">
+    <a class="btn <?php if ($action == 'index') echo 'actv' ?>" href="/report/">Publisher Impressions</a>
+    <?php if($user_role != 2):?><a class="btn <?php if ($action == 'demandindex') echo 'actv' ?>" href="/report/demandindex">Demand Impressions</a><?php endif;?>
+    <?php if($user_role == 1):?><a class="btn <?php if ($action == 'usertotals') echo 'actv' ?>" href="/report/usertotals">User Totals</a><?php endif;?>
+    <?php if($user_role == 1):?><a class="btn <?php if ($action == 'incomingBids') echo 'actv' ?>" href="/report/IncomingBids">Incoming Bids</a><?php endif;?>
+    <?php if($user_role == 1):?><a class="btn <?php if ($action == 'outgoingBids') echo 'actv' ?>" href="/report/Outgoingbids">Outgoing Bids</a><?php endif;?>
+</div>

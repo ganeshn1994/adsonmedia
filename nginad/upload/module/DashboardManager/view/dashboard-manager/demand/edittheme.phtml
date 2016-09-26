@@ -1,0 +1,168 @@
+<?php
+$this->headLink()->appendStylesheet($this->basePath() . '/css/colorpicker/colorpicker.css');
+$this->headLink()->appendStylesheet($this->basePath() . '/css/upload/dropzone.css');
+$this->headScript()->prependFile($this->basePath() . '/js/script.js');
+$this->headScript()->prependFile($this->basePath() . '/js/colorpicker/bootstrap-colorpicker.js');
+$this->headScript()->appendFile($this->basePath() . '/js/upload/dropzone.js');
+$this->headScript()->captureStart(); ?>
+
+Dropzone.autoDiscover = false;
+var mockFile = null;
+
+$(function() {
+
+    var myDropzone = new Dropzone("div#dr-zone", { 
+    		url: "/private-exchange/uploadlogo/",
+    		acceptedFiles: "image/png",
+    		paramName: "file",
+  			maxFilesize: 2, // MB
+  			uploadMultiple: false,
+  			success: function(file, storedName) { 
+  				var imgurl = '<img src="' + storedName + '" />';
+  				$("#img-preview-container").html(imgurl);
+  				$("#imageurl").val(storedName); 
+  				$("#logo-enabled").prop("checked", true);
+  				alert("Logo Upload Set"); 
+  			},
+  			error: function(file, errorMessage) { alert("Error: " + errorMessage); },
+  			init: function() {
+				    this.on("addedfile", function() {
+				      if (mockFile !== null) {
+				    	$(".dz-image-preview").remove();
+				      	mockFile = null;
+				      }
+				      if (this.files[1]!=null){
+				        this.removeFile(this.files[0]);
+				      }
+				    });
+			},
+    		});
+    		
+<?php if (!empty($imageurl)): ?>
+    mockFile = { name: "banner_mock.jpg", size: 12345 };
+    myDropzone.options.addedfile.call(myDropzone, mockFile);
+    myDropzone.options.thumbnail.call(myDropzone, mockFile, "<?php echo $imageurl; ?>");
+ <?php endif; ?>
+    
+    $('div.color').colorpicker();
+    
+});
+<?php $this->headScript()->captureEnd();  ?>
+<h4 class="headbreadcrumb blue-color">
+Set Vanity Domain &amp; Color Theme
+    <br clear="all">
+    <div class="pull-right black-color negative-margin">
+        </div> <div class="pull-right">
+          <br clear="all">
+       </div>
+</h4>
+<?php 
+    if($success_message_display == true):
+    	echo '<div id="cdn_form_success" class="alert alert-error" style="margin: 5px;">Your Settings have been Updated Successfully';
+		if (!empty($vanity_domain)):
+			echo ', <a target="_blank" href="http://' . $vanity_domain . '">[ Click Here to Preview: ' . $vanity_domain . ']</a>';
+		endif;
+		echo '</div>';
+    endif;
+?>
+<div class="steps-container step1">
+    <div id="selection-results" class="steps-box">
+    <form id="editthemeform" name="editthemeform" method="POST" class="form-horizontal form-top-magin" action="/private-exchange/newvanitydomain">
+<div class="formbox">
+<fieldset>
+    <div style="margin-bottom: 5px;">
+  
+        <table class="table table-striped table-bordered table-margin">
+            <tr>
+           <th>
+				Parameter
+           </th>
+           <th>
+                Value
+           </th>
+           <th>
+            	Enabled	
+           </th>
+           </tr>
+           <tr>
+           <td>
+            <label for="vanity-domain" class="input">Vanity Domain <span class="hlp"><br/><small><i>(eg. console.mediashakers.com)</i></small></span></label>
+           	<p>
+           		Please go to your Domain Registrar and create a DNS "A RECORD" <br /> pointing the above domain you entered to 
+           		the following IP Address: <strong><?php echo $server_ip; ?></strong>
+           		<br />
+           		Please <a target="_blank" href="/images/faq/a.record.faq.jpg">follow this easy guide</a> on how to configure your vanity domain.
+           		<br />
+           		<a target="_blank" href="/images/faq/a.record.faq.jpg">[ CLICK HERE FOR GUIDE ]</a>
+           	</p>
+           </td>
+           <td>
+            <div class="input-prepend input-append" id="best-offer-wrapper">
+                        <span class="add-on">http://</span>
+                        <input class="span2" placeholder="console.mediashakers.com" style="width: 300px;" name="vanity-domain" id="vanity-domain" type="text" value="<?php echo $vanity_domain; ?>" />
+           </div>
+            </td>
+           <td>
+           	 <label for="vd-enabled" class="input">Enable:</label> <input type="checkbox" value="1" <?php if ($use_vanity_domain): echo 'checked="checked"'; endif; ?> id="vd-enabled" name="vd-enabled" /> 
+           </td>
+           </tr>
+           
+           <tr>
+           <td>
+            <label for="dr-zone" class="input">Company Logo <span class="hlp"><br/><small><i>(eg. console.mediashakers.com - PNG file only, 300px wide)</i></small></span></label>
+           	<div id="img-preview-container">
+           		<?php if (!empty($imageurl)): ?>
+           			<img src="<?php echo $imageurl; ?>" />
+           		<?php endif; ?>
+           	</div>
+           </td>
+           <td>
+			<div class="control-group">
+				<div id="dr-zone" action="/private-exchange/uploadlogo/" class="dropzone"></div>
+			</div>	
+            </td>
+           <td>
+           	 <label for="logo-enabled" class="input">Enable:</label> <input type="checkbox" value="1" <?php if ($use_logo): echo 'checked="checked"'; endif; ?> id="logo-enabled" name="logo-enabled" /> 
+           </td>
+           </tr>
+           <?php foreach ($theme_color_params as $theme_color_param): ?>
+	           <tr>
+		           <td>
+		            <label for="<?php echo $theme_color_param["key"]; ?>" class="input"><?php echo $theme_color_param["label_name"]; ?></label>
+		           </td>
+		           <td>
+					<div class="control-group">
+						<div class="input-append color" data-color="<?php echo $theme_color_param["value"]; ?>" data-color-format="hex">
+						  <input type="text" class="span2" name="<?php echo $theme_color_param["key"]; ?>" value="<?php echo $theme_color_param["value"]; ?>" >
+						  <span class="add-on"><i style="<?php echo $theme_color_param["value"]; ?>"></i></span>
+						</div>
+					</div>	
+		            </td>
+		           <td>
+		           	&nbsp;	 
+		           </td>
+	           </tr>
+           <?php endforeach; ?>
+                      <tr>
+           <td>
+            &nbsp;
+           </td>
+           <td>
+	 <div class="control-group">
+		   <input type="submit" id="reset-button" class="btn btn-primary" name="B2" value="Reset Colors" />
+		   <input style="margin-left: 20px;" type="submit" id="update-button" class="btn btn-primary" name="B1" value="Update Domain and Theme" />
+		</div>
+            </td>
+           <td>
+           	&nbsp;
+           	</td>
+           </tr>
+    </table>
+    </div>
+    </fieldset>
+    </div>
+    </form>
+    </div>
+</div>
+
+

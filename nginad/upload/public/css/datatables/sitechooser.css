@@ -1,0 +1,12 @@
+#InvocationCodeModal {
+    margin-left: -400px;
+    width: 900px;
+}
+
+#InvocationCodeModal .modal-body {
+	max-height: 600px;
+}
+
+#rtb-feed-chooser tr {
+	cursor: pointer;
+}

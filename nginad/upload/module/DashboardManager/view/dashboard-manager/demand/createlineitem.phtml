@@ -1,0 +1,440 @@
+<?php
+$this->headScript()->appendFile($this->basePath() . '/js/3rdparty/jquery-ui-1.9.2.custom.min.js');
+$this->headLink()->appendStylesheet($this->basePath() . '/css/datatables/sitechooser.css');
+$this->headLink()->appendStylesheet($this->basePath() . '/css/datatables/jquery.dataTables.css');
+$this->headLink()->appendStylesheet($this->basePath() . '/css/upload/dropzone.css');
+$this->headLink()->appendStylesheet($this->basePath() . '/css/jquery-ui/smoothness/jquery-ui-1.9.2.custom.min.css');
+$this->headScript()->appendFile($this->basePath() . '/js/banner.js');
+$this->headScript()->appendFile($this->basePath() . '/js/script.js');
+$this->headScript()->appendFile($this->basePath() . '/js/datatables/jquery.dataTables.js');
+$this->headScript()->appendFile($this->basePath() . '/js/datatables/sitechooser.js');
+$this->headScript()->appendFile($this->basePath() . '/js/upload/dropzone.js');
+
+$current_time = time();
+$yesterday_time = $current_time - 86400;
+$yesterday = date('m/d/Y', $yesterday_time);
+
+$preview_query = $ispreview == true ? "?ispreview=true" : "";
+
+if ($ispreview == true):
+	$ad_campaign_id = $campaignpreviewid;
+else:
+	$ad_campaign_id = $campaignid;
+endif;
+
+$enddate = date('m/d/Y', time() + (86400 * 30));
+$minEndDate = explode("/", $enddate);
+
+$this->headScript()->captureStart() ?>
+
+var insertion_order_id = null;
+
+Dropzone.autoDiscover = false;
+
+$(function() {
+	$( "#startdate" ).datepicker(
+	{
+		changeMonth: true,
+		changeYear: true,
+		showOtherMonths: true,
+        selectOtherMonths: false,
+        yearRange: "-1:+6",
+	    onSelect: function(date){
+	        var selectedDate = new Date(date);
+	        var msecsInADay = 86400000;
+	        var endDate = new Date(selectedDate.getTime() + msecsInADay);
+	        $("#enddate").datepicker( "option", "minDate", endDate );
+	    }
+	});
+
+    $( "#enddate" ).datepicker(
+	{
+		changeMonth: true,
+		changeYear: true,
+		showOtherMonths: true,
+        selectOtherMonths: false,
+        yearRange: "-1:+6",
+        minDate:new Date(<?php echo $minEndDate[2];?>,<?php echo $minEndDate[0];?>,<?php echo $minEndDate[1];?>)
+	});
+	
+	$( "#stats-date-ssp" ).datepicker(
+	{
+		changeMonth: true,
+		changeYear: true,
+		showOtherMonths: true,
+        selectOtherMonths: true,
+        yearRange: "-1:+6",
+	});
+	
+	$( "#stats-date-pc" ).datepicker(
+	{
+		changeMonth: true,
+		changeYear: true,
+		showOtherMonths: true,
+        selectOtherMonths: true,
+        yearRange: "-1:+6",
+	});
+	
+	$( '#stats-date-ssp-icon' ).click(function() {
+          $('#stats-date-ssp').datepicker('show');
+    });
+	
+	$( '#stats-date-pc-icon' ).click(function() {
+          $('#stats-date-pc').datepicker('show');
+    });
+	
+	$( '#startdateicon' ).click(function() {
+          $('#startdate').datepicker('show');
+    });
+	
+	$( '#enddateicon' ).click(function() {
+          $('#enddate').datepicker('show');
+    });
+    
+    var myDropzone = new Dropzone("div#dr-zone", { 
+    		url: "/private-exchange/uploadcreative/",
+    		acceptedFiles: "image/jpg, image/jpeg,image/png,image/gif,application/x-shockwave-flash",
+    		paramName: "file",
+  			maxFilesize: 2, // MB
+  			uploadMultiple: false,
+  			success: function(file, storedName) { $("#imageurl").val(storedName); updateImageAd(false); alert("Creative Upload Set"); },
+  			error: function(file, errorMessage) { alert("Error: " + errorMessage); },
+  			init: function() {
+				    this.on("addedfile", function() {
+				      if (this.files[1]!=null){
+				        this.removeFile(this.files[0]);
+				      }
+				    });
+			}
+    		});
+});
+<?php $this->headScript()->captureEnd();  ?>
+
+ <ul class="breadcrumb">
+    <li><a href="/private-exchange/<?php echo $preview_query; ?>">Insertion Orders</a> <span class="divider">/</span></li>
+    <li><?php echo $bread_crumb_info["BCInsertionOrder"]; ?><span class="divider">/</span></li>
+     <li><a href="/private-exchange/viewlineitem/<?php echo $ad_campaign_id; ?><?php echo $preview_query; ?>">Line Items</a><span class="divider">/</span></li>
+    <li class="active">Create Line Item</li>
+    </ul>
+
+<div id="cdn_form_msg" class="alert alert-error" style="margin: 5px; display: none;"></div>
+<form onsubmit="highlightSelects();" id="bannerform" name="bannerform" method="POST" action="/private-exchange/newlineitem">
+<fieldset>
+<div class="span7">
+    <input type="hidden" name="campaignid" value="<?php echo $campaignid; ?>">
+	<input type="hidden" name="campaignpreviewid" value="<?php echo $campaignpreviewid; ?>">
+	<input type="hidden" name="ispreview" value="<?php echo $ispreview; ?>">
+	   <div class="form-group">
+		<label for="bannername">Ad Name</label>
+		<input type="text" class="txtbox-width" name="bannername">
+	</div>
+	  <div class="form-group">
+		<label for="adname">Ad Delivery Type</label>
+		<select id="ImpressionType" name="ImpressionType" class="selbox-width" onchange="switchImpressionType();">
+			<option value="banner">Banner Ad</option>
+			<option value="image">Image Ad</option>
+			<option value="video">Video Ad</option>
+		</select>
+	</div>
+	<div class="form-group">
+	    <label for="startdate">Start Date</label>
+        <div class="input-append date">
+		  <input name="startdate" id="startdate" class="txtbox-datepicker-width" size="16" type="text" value="<?php echo date('m/d/Y');?>" readonly="readonly" />
+		  <span class="add-on" id="startdateicon"><i class="icon-calendar"></i></span>
+	   </div>
+	</div>
+	
+	<div class="form-group">
+	    <label for="enddate">End Date</label>
+        <div class="input-append date">
+		  <input name="enddate" id="enddate" class="txtbox-datepicker-width" size="16" type="text" value="<?php echo $enddate;?>" readonly="readonly" />
+		  <span class="add-on" id="enddateicon"><i class="icon-calendar"></i></span>
+	   </div>
+	</div>
+	 <div class="control-group nobanner" style="display: none">
+		<label for="Mimes">Mimes : <span class="hlp"><small><i>(ctrl+shift to select mutliple)</i></small></span></label>
+		<select id="Mimes" name="Mimes[]" multiple class="zone-txtarea" style="min-height: 170px">
+    <?php foreach ($mimes as $name): ?>
+        <?php if (in_array((string)$name, $current_mimes)): ?>
+            <option value="<?php echo $name;?>" selected="selected"><?php echo $name;?></option>
+        <?php else: ?>
+            <option value="<?php echo $name;?>"><?php echo $name;?></option>
+        <?php endif; ?>
+    <?php endforeach; ?>
+</select>
+	</div>
+	
+	 <div class="control-group nobanner" style="display: none">
+		<label for="Protocols">Protocols : <span class="hlp"><small><i>(ctrl+shift to select mutliple)</i></small></span></label>
+<select id="Protocols" name="Protocols[]" multiple class="zone-txtarea" style="min-height: 120px">
+    <?php foreach ($protocols as $code => $name): ?>
+        <?php if (in_array((string)$code, $current_protocols)): ?>
+            <option value="<?php echo $code;?>" selected="selected"><?php echo $name;?></option>
+        <?php else: ?>
+            <option value="<?php echo $code;?>"><?php echo $name;?></option>
+        <?php endif; ?>
+    <?php endforeach; ?>
+</select>
+	</div>
+	
+	 <div class="control-group nobanner" style="display: none">
+		<label for="ApisSupported">Apis Supported : <span class="hlp"><small><i>(ctrl+shift to select mutliple)</i></small></span></label>
+<select id="ApisSupported" name="ApisSupported[]" multiple class="zone-txtarea" style="min-height: 120px">
+    <?php foreach ($apis_supported as $code => $name): ?>
+        <?php if (in_array((string)$code, $current_apis_supported)): ?>
+            <option value="<?php echo $code;?>" selected="selected"><?php echo $name;?></option>
+        <?php else: ?>
+            <option value="<?php echo $code;?>"><?php echo $name;?></option>
+        <?php endif; ?>
+    <?php endforeach; ?>
+</select>
+	</div>
+	
+	<div class="control-group nobanner" style="display: none">
+		<label for="StartDelay">Start Delay : </label>
+<select id="StartDelay" name="StartDelay" class="zone-txtarea">
+    <?php foreach ($start_delay as $code => $name): ?>
+        <?php if ((string)$code === $current_start_delay): ?>
+            <option value="<?php echo $code;?>" selected="selected"><?php echo $name;?></option>
+        <?php else: ?>
+            <option value="<?php echo $code;?>"><?php echo $name;?></option>
+        <?php endif; ?>
+    <?php endforeach; ?>
+</select>
+
+	</div>
+
+	<div class="form-group novideo">
+		<label for="ismobile">Is this a mobile ad?</label>
+        <select id="ismobile"  class="selbox-width" name="ismobile" onchange="switchMobile(this);">
+            <?php foreach ($mobile_options as $code => $name): ?>
+                <option value="<?php echo $code;?>"><?php echo $name;?></option>
+            <?php endforeach; ?>
+        </select>
+	</div>
+	<div class="form-group novideo">
+		<label for="iabsize">IAB Size</label>
+		<div id="size-select">
+<select id="iabsize"  class="selbox-width"  name="iabsize" onchange="formSelectSize(this);">
+    <option value="" selected="selected">[ SELECT A SIZE ]</option>
+    <?php foreach ($size_list as $shortcode => $name): ?>
+        <option value="<?php echo $shortcode;?>"><?php echo $name;?></option>
+    <?php endforeach; ?>
+</select>
+  </div>
+  </div>
+		<div class="form-group novideo">
+		<label for="height">Height</label>
+		<input type="text" id="height" name="height" class="input-mini">
+	</div>
+<div class="form-group novideo">
+		<label for="width">Width</label>
+		<input type="text" id="width" name="width" class="input-mini">
+	</div>
+<div class="form-group">
+
+		<label for="bidamount">Bid Amount ( CPM )</label>
+		<div class="input-prepend">
+		<span class="add-on">$</span>
+		<input type="text" name="bidamount"  class="input-small" value="0.25">
+		</div>
+	</div>
+	 <div class="control-group nobanner" style="display: none">
+		<label for="adtagtype">VAST Tag Type</label>
+		<div class="btn-group" role="group" aria-label="...">
+		  <button type="button" onclick="switchImpressionType('xml');" class="btn btn-default">VAST XML</button>
+		  <button type="button" onclick="switchImpressionType('url');" class="btn btn-default">VAST URL</button>
+		</div>
+	</div>
+	<div class="control-group imagead" style="display: none">
+		<div id="dr-zone" action="/file-upload" class="dropzone"></div>
+	</div>	
+	 <div class="control-group imagead" style="display: none">
+		<label for="imageurl">Image Ad URL : <span class="hlp"><small><i>( eg. http://www.iab.net/media/image/120x20.png )</i></small></span></label>
+		<span id="imageurlwrapper">
+			<input value="<?php echo $imageurl;?>" class="input-xxlarge" type="text" id="imageurl" name="imageurl" />
+		</span>
+	</div>	
+	 <div class="control-group imagead" style="display: none">
+		<label for="landingpageurl">Image Ad Landing Page URL : <span class="hlp"><small><i>( eg. http://www.example.com/landing-page.html )</i></small></span></label>
+		<span id="landingpageurlwrapper">
+			<input value="<?php echo $landingpageurl;?>" class="input-xxlarge" type="text" id="landingpageurl" name="landingpageurl" />
+		</span>
+	</div>	
+	<div class="form-group">
+		<label for="adtag">Ad Tag</label>
+		<span id="adtagwrapper">
+			<textarea class="txtbox-width" style="height: 200px; width: 500px;" id="adtag" name="adtag" rows="6"></textarea>
+		</span>
+	</div>
+	
+	 <div class="control-group nobanner" style="display: none">
+		<label for="Delivery">Delivery : <span class="hlp"><small><i>(ctrl+shift to select mutliple)</i></small></span></label>
+<select id="Delivery" name="Delivery[]" multiple class="zone-txtarea" style="min-height: 50px">
+    <?php foreach ($delivery_methods as $code => $name): ?>
+        <?php if (in_array((string)$code, $current_delivery_methods)): ?>
+            <option value="<?php echo $code;?>" selected="selected"><?php echo $name;?></option>
+        <?php else: ?>
+            <option value="<?php echo $code;?>"><?php echo $name;?></option>
+        <?php endif; ?>
+    <?php endforeach; ?>
+</select>
+	</div>
+	
+	 <div class="control-group nobanner" style="display: none">
+		<label for="Playback">Playback : <span class="hlp"><small><i>(ctrl+shift to select mutliple)</i></small></span></label>
+<select id="Playback" name="Playback[]" multiple class="zone-txtarea" style="min-height: 100px">
+    <?php foreach ($playback_methods as $code => $name): ?>
+        <?php if (in_array((string)$code, $current_playback_methods)): ?>
+            <option value="<?php echo $code;?>" selected="selected"><?php echo $name;?></option>
+        <?php else: ?>
+            <option value="<?php echo $code;?>"><?php echo $name;?></option>
+        <?php endif; ?>
+    <?php endforeach; ?>
+</select>
+	</div>
+	
+	<div class="control-group nobanner" style="display: none">
+		<label for="Linearity">Linearity : </label>
+<select id="Linearity" name="Linearity" class="zone-txtarea">
+    <?php foreach ($linearity as $code => $name): ?>
+        <?php if ((string)$code === $current_linearity): ?>
+            <option value="<?php echo $code;?>" selected="selected"><?php echo $name;?></option>
+        <?php else: ?>
+            <option value="<?php echo $code;?>"><?php echo $name;?></option>
+        <?php endif; ?>
+    <?php endforeach; ?>
+</select>
+
+	</div>
+	
+<div class="form-group">
+		<label for="landingpagetld" class="input">LandingPage TLD [top level domain] <br/>
+		<span class="hlp">
+		<small><i>(eg. nginad.com - required by RTB [if not known just use the tld of the tag])</i></small></span><nobr></nobr></label>
+		<input type="text" class="input-medium" name="landingpagetld" value="nginad.com">
+	</div>
+	</div>
+	<div class="span7">
+  <div class="inventory-container">
+  	<h4 class="no-pad">Private Exchange Inventory Feeds</h4>
+  	<div>
+  	<input type="button" class="btn btn-primary btn-margin" name="AddPcFeed" value="Add" onclick="showChooserPx();" />
+  	<input type="button" class="btn btn-primary btn-margin next" name="RemovePxFeed" value="Remove" onclick="removeSelectedPxItems();" />
+  	</div>
+  	<div>
+  	<select autocomplete="off" id="px-feeds" name="px-feeds[]" multiple="multiple" class="zone-txtarea inventory-select">
+  	<?php foreach ($pmp_deal_list as $pmp_deal):
+			if ($pmp_deal->PublisherWebsiteLocal == 1 && $pmp_deal->Enabled == 1): ?>
+				<option value="<?php echo rawurlencode($pmp_deal->PublisherWebsiteID . '::' . $pmp_deal->PublisherWebsiteDescription); ?>"><?php echo $pmp_deal->PublisherWebsiteDescription; ?></option>
+	<?php 	endif;	
+		endforeach; ?>
+	</select>
+  	</div>
+  	<div class="stats-date">
+  	<small>Statistics Date: LATEST</small>
+  	</div>
+  </div>
+  
+  <div class="inventory-container top-pad">
+  	<h4 class="no-pad">Platform Connection Inventory Feeds</h4>
+  	<div>
+  	<input type="button" class="btn btn-primary btn-margin" name="AddPcFeed" value="Add" onclick="showChooserPc();" />
+  	<input type="button" class="btn btn-primary btn-margin next" name="RemovePcFeed" value="Remove" onclick="removeSelectedPcItems();" />
+  	</div>
+  	<div>
+  	<select autocomplete="off" id="pc-feeds" name="pc-feeds[]" multiple="multiple" class="zone-txtarea inventory-select">
+  	<?php foreach ($pmp_deal_list as $pmp_deal):
+			if ($pmp_deal->PublisherWebsiteLocal == 0 && $pmp_deal->Enabled == 1): ?>
+				<option value="<?php echo rawurlencode($pmp_deal->PublisherWebsiteID . '::' . $pmp_deal->PublisherWebsiteDescription); ?>"><?php echo $pmp_deal->PublisherWebsiteDescription; ?></option>
+	<?php 	endif;	
+		endforeach; ?>
+	</select>
+  	</div>
+  	<div class="stats-date">
+  		<small>Statistics Date: </small>
+  		<div class="input-append date">
+			<input name="stats-date-pc" id="stats-date-pc" class="span2" size="16" type="text" value="<?php echo $yesterday;?>" readonly="readonly" />
+			<span class="add-on" id="stats-date-pc-icon"><i class="icon-calendar"></i></span>
+		</div>
+  	</div>
+  </div>
+  
+  <div class="inventory-container top-pad">
+  	<h4 class="no-pad">SSP RTB Publisher Inventory Feeds</h4>
+  	<div>
+  	<input type="button" class="btn btn-primary btn-margin" name="AddSspFeed" value="Add" onclick="showChooserSsp();" />
+  	<input type="button" class="btn btn-primary btn-margin next" name="RemoveSspFeed" value="Remove" onclick="removeSelectedSspItems();" />
+  	</div>
+  	<div>
+  	<select autocomplete="off" id="ssp-feeds" name="ssp-feeds[]" multiple="multiple" class="zone-txtarea inventory-select">
+  	<?php foreach ($ssp_channel_list as $ssp_channel):
+			if ($ssp_channel->Enabled == 1): ?>
+				<option value="<?php echo rawurlencode(str_replace(':', '__COLON__', $ssp_channel->SspPublisherChannelID) . ':' . str_replace(':', '__COLON__', $ssp_channel->SspExchange) . ':' . $ssp_channel->SspPublisherChannelDescription); ?>"><?php echo $ssp_channel->SspPublisherChannelDescription; ?></option>
+	<?php 	endif;	
+		endforeach; ?>
+	</select>
+  	</div>
+  	<div class="stats-date">
+  		<small>Statistics Date: </small>
+  		<div class="input-append date">
+			<input name="stats-date-ssp" id="stats-date-ssp" class="span2" size="16" type="text" value="<?php echo $yesterday;?>" readonly="readonly" />
+			<span class="add-on" id="stats-date-ssp-icon"><i class="icon-calendar"></i></span>
+		</div>
+  	</div>
+  </div>
+  
+	</div>
+	<div class="span12">
+	<div class="form-group">
+	   <input type="submit" id="create-button" class="btn btn-primary" name="B1" value="Create New Banner" />
+	   </div>
+	</div>
+</fieldset>
+</form>
+<!-- Invocation Code Modal -->
+<div class="modal fade" id="InvocationCodeModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true" style="display: none;">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title" id="myModalLabel">Site Chooser</h4>
+        <button type="button" id="cls-btn" class="btn" data-dismiss="modal" style="position: absolute; right: 15px; top: 15px">Close</button>
+     	<button type="button" onclick="addCheckedBoxes();" class="btn btn-default" style="position: absolute; right: 100px; top: 15px">Add To Insertion Order</button>
+      </div>
+      <div class="modal-body">
+        <div>
+			<table id="rtb-feed-chooser" class="display compact" cellspacing="0" width="100%">
+				<thead>
+					<tr>
+						<th> </th>
+						<th>Site ID</th>
+						<th>Domain</th>
+						<th>Name</th>
+						<th>IAB Cat</th>
+						<th>Daily Imps</th>
+						<th>Average CPM</th>
+						<th>Floor</th>
+						<th>Exchange</th>
+					</tr>
+				</thead>
+
+				<tfoot>
+					<tr>
+						<th> </th>
+						<th>Site ID</th>
+						<th>Domain</th>
+						<th>Name</th>
+						<th>IAB Cat</th>
+						<th>Daily Imps</th>
+						<th>Average CPM</th>
+						<th>Floor</th>
+						<th>Exchange</th>
+					</tr>
+				</tfoot>
+			</table>
+	</div>				
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Invocation Code Modal -->

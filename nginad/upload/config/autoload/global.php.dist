@@ -1,0 +1,236 @@
+<?php
+/**
+ * NGINAD Project
+ *
+ * @link http://www.nginad.com
+ * @copyright Copyright (c) 2013-2016 NginAd Foundation. All Rights Reserved
+ * @license GPLv3
+ */
+
+/**
+ * Global Configuration Override
+ *
+ * You can use this file for overriding configuration values from modules, etc.
+ * You would place values in here that are agnostic to the environment and not
+ * sensitive to security.
+ *
+ * @NOTE: In practice, this file will typically be INCLUDED in your source
+ * control, so do not include passwords or other sensitive information in this
+ * file.
+ */
+
+return array(
+		/*
+		 * UNCOMMENT ON PRODUCTION
+		 * 
+		'view_manager' => array(
+    			'display_exceptions' => false
+		),
+		*/
+		'roles' => array(
+				'member' 		=> "member",
+				'domain_admin' 	=> "domain_admin",
+				'super_admin' 		=> "super_admin",
+		),
+		'settings' => array(
+				/*
+				 * Bypass private exchange channel selections
+				 * completely and bid on all SSP traffic.
+				 * 
+				 * Set this to true if you are using NginAd as a bidder 
+				 * and are not hosting private exchange customers.
+				 */
+				'ssp_channel_bypass'			=> false,
+				/*
+				 * Bypass private exchange channel selections
+				 * completely and bid on all PMP(Private Marketplace/Platform Exchange) traffic.
+				 *
+				 * Set this to true if you are using NginAd as a bidder
+				 * and are not hosting private exchange customers.
+				 */
+				'pmp_channel_bypass'			=> false,
+				/*
+				 * header bidding settings
+				 */
+				'header_bidding' => array(
+						/*
+						 * Cache time in minutes for header bid requests that 
+						 * were previously calculated
+						 */
+						'cache_time_minutes' 	=> 5
+				),
+				/*
+				 * publisher settings
+				 */  
+				'publisher' => array(
+						'auto_approve_zones' 	=> true,
+						'auto_approve_websites' => true
+				),
+				'rtb' => array(
+						// rtb encrytion key
+						'encryption_key'				=> 'my_encryption_key',
+						// default US dollars
+						'auction_currency' 				=> "USD",
+						'second_price_auction' 			=> false,
+						// integral traq score 500+
+						'third_party_traq'				=> false,
+						// enable project honeypot protection
+						'project_honeypot_protected'	=> false,
+						/*
+						 * Project Honey Pot key, register at http://www.projecthoneypot.org for free to get one
+						 * Then visit: http://www.projecthoneypot.org/httpbl_configure.php
+						 * to get the API key to paste here
+						 */ 
+						'project_honeypot_api_key'		=> '[MY_API_KEY]',
+						/*
+						 * enable Forensiq.com protection
+						 * Forensiq is a pay service that costs money.
+						 * You need to use the contact form at 
+						 * http://www.forensiq.com if you want to sign up
+						 * and pay for the RTB Ad Fraud API.
+						 */ 
+						'forensiq_protected'			=> false,
+						// Your Forensiq API key goes here
+						'forensiq_api_key'				=> '[MY_API_KEY]',
+						/*
+						 * enable Tor filtering
+						 * Ad impressions from Tor IP Addresses
+						 * and browsers are rarely worth anything 
+						 * when sold on peer exchanges
+						*/
+						'tor_protected'					=> false,
+						/*
+						 * You want to put the tor deny list in the nginx
+						 * conf.d folder so it doubles to block tor users
+						 * from accessing nginx as well.
+						 * 
+						 * In your /etc/nginx/conf.d/default.conf you can add
+						 * the tor-ip.conf include to your php files:
+						 * 
+						 * location ~ \.php$ {
+						 * 	   include conf.d/tor-ip.conf;
+						 * 
+						 * That way you don't waste resources on Tor clients
+						 * 
+						 * File location must be writable by nginx.
+						 * eg. 
+						 * touch /etc/nginx/conf.d/tor-ip.conf
+						 * chown nginx:nginx /etc/nginx/conf.d/tor-ip.conf
+						 * 
+						 * Also requires a new crontab separate from Maintenance:
+						 * 5 * * * * curl 'http://server.nginad.com/maintenance/torlist?secret_key=nginadxyz'; /usr/sbin/nginx -s reload
+						 */
+						'tor_file_save_location'		=> '/etc/nginx/conf.d/tor-ip.conf'
+				),
+				'shell' => array(
+						'has_curl_on_path'		=> false
+				)
+		),
+		'maintenance' => array(
+				'secret_key_crontab' => 'nginadxyz',
+				'tasks' => array(
+					// all maintenance tasks should be in minutes
+					'daily' => array(
+						'interval_in_minutes' => 1440,
+						'maintenance_function' => 'dailyMaintenanceAction'
+					),
+					'ten_minute' => array(
+						'interval_in_minutes' => 10,
+						'maintenance_function' => 'tenMinuteMaintenanceAction'
+					),
+				)
+		),
+		'vanity_domains' => array(
+			/*
+			 * This should be the main IP address of the NginAd installation.
+			 * If you only have 1 server, then it's the IP address of the server.
+			 * 
+			 * If you have many NginAd instances behind a nginx load balancer,
+			 * then it would be the IP address of the load balancer.
+			 * 
+			 * Configs for load balancing are in: \server.configs\load.balancer\etc
+			 * 
+			 * If no IP or 127.0.0.1 is specified, $_SERVER['SERVER_ADDR'] will be used.
+			 */
+			'server_ip' => '127.0.0.1' 
+		),
+		'themes' => array(
+				/*
+				 * The PHP Imagick (ImageMagick) module is installed and enabled
+				 * We need this to resize the custom logo
+				 * 
+				 * Install PHP ImageMagick:
+				 * yum --enablerepo=remi install php-imagick
+				 * 
+				 * Reset permissions on the PHP session directory afterwards:
+				 * chown -R nginx:nginx /var/lib/php/session
+				 * 
+				 * Restart php-fpm and nginx:
+				 * service php-fpm restart
+				 * service nginx restart
+				 */
+				'imagick_enabled' => true,
+				/*
+				 * The default color scheme for your NginAd Exchange
+				 * see public/css/colorscheme/theme.css.template
+				 */ 
+				'default_colors' => array(
+					"_COLOR_FONT_MAIN_"					=> "#333333",
+					"_COLOR_FONT_FOREGROUND_"			=> "#ffffff",
+					"_COLOR_LINK_TEXT_"					=> "#0088cc",
+					"_COLOR_LINK_HIGHLIGHT_"			=> "#005580",
+					"_COLOR_BACKGROUND_"				=> "#0088cc",
+					"_BUTTON_START_GRADIENT_"			=> "#0088cc",
+					"_BUTTON_END_GRADIENT_"				=> "#0044cc",
+					"_NAV_LINK_LIGHT_COLOR_"			=> "#ffffff",
+					"_NAV_LINK_MEDIUM_COLOR_"			=> "#555555",
+					"_NAV_LINK_DARK_COLOR_"				=> "#333333",
+					"_DISABLED_TEXT_COLOR_"				=> "#999999",
+					"_HELP_TEXT_COLOR_"					=> "#0088cc",
+					"_HEADER_BACKGROUND_COLOR_"			=> "#f5f5f5",
+					"_TABLE_LINK_COLOR_TEXT_"			=> "#666666",
+					"_TABLE_LINK_COLOR_VISITED_"		=> "#999999",
+					"_TABLE_LINK_COLOR_ACTIVE_"			=> "#bd5a35",
+					"_TABLE_TEXT_COLOR_"				=> "#666666",
+					"_COLOR_BUTTON_FONT_FOREGROUND_"	=> "#ffffff",
+					"_COLOR_BUTTON_BACKGROUND_"			=> "#f5f5f5",
+					"_COLOR_BUTTON_BKRND_HOVER_"		=> "#219BED",
+					"_FOOTER_BACKGROUND_COLOR_"			=> "#F5F5F5",
+					"_COLOR_BUTTON_FONT_HOVER_"			=> "#cccccc",
+					"_COLOR_BUTTON_BKRND_ACTIVE_"		=> "#cccccc",
+					"_COLOR_BUTTON_FONT_ACTIVE_"		=> "#666666",
+					"_COLOR_FOOTER_BUTTON_BACKGROUND_"	=> "#F5F5F5",
+					"_COLOR_FOOTER_BUTTON_FONT_TEXT_"	=> "#333333",
+					"_FOOTER_COLOR_BUTTON_BKRND_HOVER_"	=> "#cccccc",
+					"_COLOR_FOOTER_BUTTON_FONT_HOVER_"	=> "#666666",
+					"_NAVLINK_TAB_ACTIVE_"				=> "#222222",
+					"_COLOR_NAVLINK_FONT_FOREGROUND_"	=> "#ffffff",
+					"_COLOR_NAVLINK_BACKGROUND_"		=> "#ffffff"
+				)
+		),
+		'system' => array(
+				'debug' 												=> false, // simple debug information to track errors/status.
+				'debug_verbose'                     					=> false, // maximum debug information.
+				// delay between maintenance updates in minutes
+				'maintenance_updates_minutes' 							=> 15,
+				// default demand 30% markup
+				'default_demand_markup_rate' 							=> 0.30,
+				// default publisher 10% markup
+				'default_publisher_markup_rate' 						=> 0.10,
+				/*
+				 * default publisher 20% markup for 
+				 * private exchange domain admins
+				 */ 
+				'default_private_exchange_publisher_markup_rate' 		=> 0.20,
+				// our house user ids are exempt from being marked up
+				'markup_exempt_userid_list'								=> array(1),
+				// our house publisher ids are exempt from being marked up
+				'markup_exempt_publisher_info_id_list'					=> array(),
+				// default publisher 0% impressions lost to client network bounce rate
+				'default_publisher_impressions_network_loss_rate' 		=> 0.00,
+				// our house publisher ids are exempt from being scrubbed as network loss
+				'network_loss_exempt_publisher_info_id_list'			=> array(),
+				// version
+				'version_id'											=> '1.6.12'
+		),
+);
